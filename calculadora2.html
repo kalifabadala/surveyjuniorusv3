@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Generador de Enlaces Encuesta</title>
+<style>
+  body {
+    margin:0; padding:0; min-height:100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+    color: #4a3c31;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  header {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #333;
+    background: #f0f0f0cc;
+    padding: 0.3rem 1.2rem;
+    border-radius: 10px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+  }
+  main {
+    background: #fffdf9dd;
+    padding: 3rem 3rem 2rem 3rem;
+    border-radius: 14px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    margin-top: 80px;
+  }
+  h1 {
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 1.6rem;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: 1.5px solid #d8c3a5;
+    box-sizing: border-box;
+    margin-bottom: 0.8rem;
+    transition: border-color 0.3s ease;
+  }
+  input[type="text"]:focus {
+    border-color: #f6d365;
+    outline: none;
+  }
+  #legendWrapper {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+    font-size: 0.9rem;
+    color: #7a6c57;
+    font-family: monospace, monospace;
+    user-select: none;
+    margin-bottom: 6rem; /* margen aumentado el doble */
+  }
+  #legendText {
+    border-bottom: 1px dotted #7a6c57;
+  }
+  #legendFull {
+    visibility: hidden;
+    opacity: 0;
+    background-color: #f7edd1;
+    color: #4a3c31;
+    text-align: left;
+    border-radius: 8px;
+    padding: 10px;
+    width: 280px;
+    font-size: 0.8rem;
+    font-family: monospace, monospace;
+    white-space: normal;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 1.6rem;
+    transition: opacity 0.3s ease;
+    z-index: 100;
+  }
+  #legendWrapper:hover #legendFull {
+    visibility: visible;
+    opacity: 1;
+  }
+  button {
+    background-color: #f6d365;
+    border: none;
+    padding: 0.85rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #4a3c31;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+    margin-top: 0;
+  }
+  button:hover {
+    background-color: #fda085;
+    color: #fff;
+  }
+  .output {
+    margin-top: 1.25rem;
+    padding: 0.75rem 1rem;
+    background: #f7edd1;
+    border-radius: 10px;
+    word-break: break-word;
+    font-size: 1rem;
+  }
+  a.output-link {
+    color: #4a3c31;
+    text-decoration: underline;
+  }
+  .error {
+    color: #b34343;
+    margin-top: 1rem;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<header>Metodo Encuestas 2026</header>
+
+<main>
+  <h1>Generador de enlace para encuesta</h1>
+  <input type="text" id="inputURL" placeholder="Pega aquí la URL completa" aria-label="URL para generar enlace" />
+  <div id="legendWrapper" tabindex="0" aria-describedby="legendFull">
+    <span id="legendText">¿Qué tipo de URL debo ingresar? <sup>❓</sup></span>
+    <div id="legendFull" role="tooltip" aria-hidden="true">
+      https://opensurvey.reppublika.com/shared/base/index.php?account=1579439651&amp;project=0009391111&amp;channel=24917&amp;uuid=123456f0-ac33-11f0-89aa-c556771ed123&amp;sign=...<br>
+      (Copia y pega la URL completa aquí)
+    </div>
+  </div>
+  <button id="generateBtn" type="button">Generar enlace</button>
+  <div id="result" class="output" aria-live="polite" role="region"></div>
+  <div id="errorMsg" class="error" aria-live="assertive"></div>
+</main>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('generateBtn');
+    const inputElem = document.getElementById('inputURL');
+    const resultDiv = document.getElementById('result');
+    const errorDiv = document.getElementById('errorMsg');
+
+    btn.addEventListener('click', () => {
+      resultDiv.textContent = '';
+      errorDiv.textContent = '';
+
+      const inputURL = inputElem.value.trim();
+      if (!inputURL) {
+        errorDiv.textContent = 'Por favor, ingresa una URL.';
+        return;
+      }
+
+      try {
+        const url = new URL(inputURL);
+        
+        const project = url.searchParams.get('project');
+        if (!project) {
+          errorDiv.textContent = 'Parámetro "project" no encontrado en la URL.';
+          return;
+        }
+
+        const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+        const match = inputURL.match(uuidRegex);
+        if (!match) {
+          errorDiv.textContent = 'No se encontró el UUID en la URL proporcionada.';
+          return;
+        }
+        const respBack = match[0];
+
+        const baseUrl = 'https://www.opensurvey.com/survey/1579439651/';
+        const generatedUrl = `${baseUrl}${encodeURIComponent(project)}?statusBack=1&respBack=${encodeURIComponent(respBack)}`;
+
+        const link = document.createElement('a');
+        link.href = generatedUrl;
+        link.textContent = generatedUrl;
+        link.target = '_blank';
+        link.className = 'output-link';
+
+        resultDiv.appendChild(link);
+      } catch (e) {
+        errorDiv.textContent = 'URL inválida. Por favor, verifica e intenta nuevamente.';
+        console.error(e);
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
